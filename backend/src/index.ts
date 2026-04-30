@@ -12,7 +12,7 @@ const app = express();
 app.use(cors({
   origin: [
     "https://appgen-theta.vercel.app", 
-    "https://appgen-io5br0e5f-sanikakarche7-6219s-projects.vercel.app"
+    "https://appgen-theta.vercel.app/login",
   ],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE"],
