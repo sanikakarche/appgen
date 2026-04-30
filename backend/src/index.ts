@@ -9,7 +9,15 @@ import dataRoutes from './routes/data';
 dotenv.config();
 
 const app = express();
-app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
+app.use(cors({
+  origin: [
+    "https://appgen-theta.vercel.app", 
+    "https://appgen-io5br0e5f-sanikakarche7-6219s-projects.vercel.app"
+  ],
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);
