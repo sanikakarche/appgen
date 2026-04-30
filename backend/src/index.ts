@@ -10,12 +10,9 @@ dotenv.config();
 
 const app = express();
 app.use(cors({
-  origin: [
-    "https://appgen-theta.vercel.app", 
-    "https://appgen-theta.vercel.app/login",
-  ],
+  origin: true, // This allows any Vercel preview link to talk to the backend
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 app.use(express.json());
