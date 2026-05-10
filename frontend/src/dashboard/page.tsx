@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLang } from '@/context/LangContext';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import { Plus, Layers, Trash2, Clock, Code2, Zap, X, ChevronRight } from 'lucide-react';
@@ -25,6 +26,7 @@ const DEFAULT_CONFIG = {
 
 export default function Dashboard() {
   const router = useRouter();
+  const { lang, setLang, t } = useLang();
   const [apps, setApps] = useState<any[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
@@ -82,26 +84,38 @@ export default function Dashboard() {
           </div>
           <span style={{ fontWeight: '800', fontSize: '1.1rem', color: 'white' }}>AppGen</span>
         </div>
-        <span style={{ color: '#6b7280', fontSize: '0.85rem' }}>Config-Driven App Builder</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ display: 'flex', background: '#0a0a0f', borderRadius: '8px', padding: '3px', border: '1px solid #2a2a3a' }}>
+            {(['en', 'hi', 'mr'] as const).map(l => (
+              <button key={l} onClick={() => setLang(l)}
+                style={{ padding: '4px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '600',
+                  background: lang === l ? '#6366f1' : 'transparent',
+                  color: lang === l ? 'white' : '#6b7280' }}>
+                {l === 'en' ? 'EN' : l === 'hi' ? 'हि' : 'म'}
+              </button>
+            ))}
+          </div>
+          <span style={{ color: '#6b7280', fontSize: '0.85rem' }}>Config-Driven App Builder</span>
+        </div>
       </nav>
 
       <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '2rem 1.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <h1 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '0.3rem', color: 'white' }}>My Apps</h1>
-            <p style={{ color: '#6b7280' }}>{apps.length} app{apps.length !== 1 ? 's' : ''} created</p>
+            <h1 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '0.3rem', color: 'white' }}>{t.myApps}</h1>
+            <p style={{ color: '#6b7280' }}>{apps.length} {t.appCreated}</p>
           </div>
           <button onClick={() => setShowCreate(true)}
             style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', border: 'none', borderRadius: '12px', padding: '0.75rem 1.25rem', color: 'white', fontWeight: '700', cursor: 'pointer', fontSize: '0.9rem' }}>
-            <Plus size={18} /> New App
+            <Plus size={18} /> {t.newApp}
           </button>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
           {[
-            { icon: <Layers size={20} />, label: 'Total Apps', value: apps.length },
-            { icon: <Zap size={20} />, label: 'Components', value: apps.reduce((a, app) => a + (app.config?.pages?.[0]?.components?.length || 0), 0) },
-            { icon: <Code2 size={20} />, label: 'Pages', value: apps.reduce((a, app) => a + (app.config?.pages?.length || 0), 0) },
+            { icon: <Layers size={20} />, label: t.totalApps, value: apps.length },
+            { icon: <Zap size={20} />, label: t.components, value: apps.reduce((a, app) => a + (app.config?.pages?.[0]?.components?.length || 0), 0) },
+            { icon: <Code2 size={20} />, label: t.pages, value: apps.reduce((a, app) => a + (app.config?.pages?.length || 0), 0) },
           ].map((stat, i) => (
             <div key={i} style={{ background: '#111118', border: '1px solid #2a2a3a', borderRadius: '14px', padding: '1.2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <div style={{ width: '40px', height: '40px', background: 'rgba(99,102,241,0.15)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6366f1' }}>{stat.icon}</div>
@@ -116,9 +130,9 @@ export default function Dashboard() {
         {apps.length === 0 ? (
           <div style={{ background: '#111118', border: '1px solid #2a2a3a', borderRadius: '20px', padding: '4rem', textAlign: 'center' }}>
             <div style={{ width: '64px', height: '64px', background: 'rgba(99,102,241,0.1)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', color: '#6366f1' }}><Layers size={28} /></div>
-            <h3 style={{ fontWeight: '700', marginBottom: '0.5rem', color: 'white' }}>No apps yet</h3>
-            <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>Create your first config-driven app</p>
-            <button onClick={() => setShowCreate(true)} style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', border: 'none', borderRadius: '10px', padding: '0.7rem 1.5rem', color: 'white', fontWeight: '600', cursor: 'pointer' }}>Create App</button>
+            <h3 style={{ fontWeight: '700', marginBottom: '0.5rem', color: 'white' }}>{t.noApps}</h3>
+            <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>{t.noAppsDesc}</p>
+            <button onClick={() => setShowCreate(true)} style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', border: 'none', borderRadius: '10px', padding: '0.7rem 1.5rem', color: 'white', fontWeight: '600', cursor: 'pointer' }}>{t.createApp}</button>
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
@@ -138,8 +152,8 @@ export default function Dashboard() {
                 </div>
                 <h3 style={{ fontWeight: '700', fontSize: '1rem', marginBottom: '0.5rem', color: 'white' }}>{app.name}</h3>
                 <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-                  <span style={{ fontSize: '0.75rem', background: 'rgba(99,102,241,0.1)', color: '#818cf8', padding: '2px 8px', borderRadius: '20px' }}>{app.config?.pages?.length || 0} pages</span>
-                  <span style={{ fontSize: '0.75rem', background: 'rgba(16,185,129,0.1)', color: '#34d399', padding: '2px 8px', borderRadius: '20px' }}>{app.config?.pages?.[0]?.components?.length || 0} components</span>
+                  <span style={{ fontSize: '0.75rem', background: 'rgba(99,102,241,0.1)', color: '#818cf8', padding: '2px 8px', borderRadius: '20px' }}>{app.config?.pages?.length || 0} {t.pages}</span>
+                  <span style={{ fontSize: '0.75rem', background: 'rgba(16,185,129,0.1)', color: '#34d399', padding: '2px 8px', borderRadius: '20px' }}>{app.config?.pages?.[0]?.components?.length || 0} {t.components}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ color: '#6b7280', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -151,7 +165,7 @@ export default function Dashboard() {
                       ✏️ Edit
                     </span>
                     <span style={{ color: '#6366f1', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '600' }}>
-                      Open <ChevronRight size={14} />
+                      {t.open} <ChevronRight size={14} />
                     </span>
                   </div>
                 </div>
@@ -165,7 +179,7 @@ export default function Dashboard() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 100, backdropFilter: 'blur(4px)' }}>
           <div style={{ background: '#111118', border: '1px solid #2a2a3a', borderRadius: '20px', padding: '2rem', width: '100%', maxWidth: '680px', maxHeight: '90vh', overflow: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontWeight: '800', fontSize: '1.3rem', color: 'white' }}>Create New App</h2>
+              <h2 style={{ fontWeight: '800', fontSize: '1.3rem', color: 'white' }}>{t.createApp}</h2>
               <button onClick={() => setShowCreate(false)} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer' }}><X size={20} /></button>
             </div>
             <label style={{ color: '#6b7280', fontSize: '0.8rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>App Name</label>
@@ -180,11 +194,11 @@ export default function Dashboard() {
             <div style={{ display: 'flex', gap: '0.75rem' }}>
               <button onClick={createApp} disabled={creating || !!jsonError}
                 style={{ flex: 1, background: creating || jsonError ? '#1a1a24' : 'linear-gradient(135deg, #6366f1, #8b5cf6)', border: 'none', borderRadius: '12px', padding: '0.85rem', color: 'white', fontWeight: '700', cursor: creating || jsonError ? 'not-allowed' : 'pointer' }}>
-                {creating ? 'Creating...' : '🚀 Create App'}
+                {creating ? 'Creating...' : '🚀 ' + t.createApp}
               </button>
               <button onClick={() => setShowCreate(false)}
                 style={{ flex: 1, background: '#1a1a24', border: '1px solid #2a2a3a', borderRadius: '12px', padding: '0.85rem', color: 'white', fontWeight: '600', cursor: 'pointer' }}>
-                Cancel
+                {t.cancel}
               </button>
             </div>
           </div>
