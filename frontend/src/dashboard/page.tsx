@@ -35,13 +35,17 @@ export default function Dashboard() {
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) router.push('/login');
-    else if (user) fetchApps();
-  }, [user, loading]);
+  fetchApps();
+}, []);
 
   const fetchApps = async () => {
-    try { const { data } = await api.get('/apps'); setApps(data); } catch {}
-  };
+  try { 
+    const { data } = await api.get('/apps'); 
+    setApps(data); 
+  } catch (e) {
+    // silently fail
+  }
+};
 
   const validateJson = (val: string) => {
     try { JSON.parse(val); setJsonError(''); return true; }
@@ -71,16 +75,6 @@ export default function Dashboard() {
     toast.success('Deleted');
   };
 
-  if (loading) return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ width: '40px', height: '40px', border: '3px solid var(--border)', borderTop: '3px solid #6366f1', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 1rem' }} />
-        <p style={{ color: 'var(--muted)' }}>Loading...</p>
-      </div>
-    </div>
-  );
-
-  if (!user) return null;
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
