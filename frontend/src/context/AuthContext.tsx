@@ -24,7 +24,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Load user from localStorage if exists, but never redirect
     try {
       const u = localStorage.getItem('user');
       if (u) setUser(JSON.parse(u));
@@ -48,7 +47,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     localStorage.clear();
     setUser(null);
-    // No redirect — stay on dashboard
   };
 
   return (

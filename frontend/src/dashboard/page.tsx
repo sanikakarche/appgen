@@ -42,8 +42,8 @@ export default function Dashboard() {
     try {
       const { data } = await api.get('/apps');
       setApps(data);
-    } catch (e) {
-      // silently fail
+    } catch {
+      // silently fail - no redirect
     }
   };
 
@@ -77,6 +77,7 @@ export default function Dashboard() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#0a0a0f' }}>
+      {/* NAV */}
       <nav style={{ background: '#111118', borderBottom: '1px solid #2a2a3a', position: 'sticky', top: 0, zIndex: 50, padding: '0 1.5rem', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{ width: '32px', height: '32px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -84,22 +85,26 @@ export default function Dashboard() {
           </div>
           <span style={{ fontWeight: '800', fontSize: '1.1rem', color: 'white' }}>AppGen</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ display: 'flex', background: '#0a0a0f', borderRadius: '8px', padding: '3px', border: '1px solid #2a2a3a' }}>
-            {(['en', 'hi', 'mr'] as const).map(l => (
-              <button key={l} onClick={() => setLang(l)}
-                style={{ padding: '4px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '600',
-                  background: lang === l ? '#6366f1' : 'transparent',
-                  color: lang === l ? 'white' : '#6b7280' }}>
-                {l === 'en' ? 'EN' : l === 'hi' ? 'हि' : 'म'}
-              </button>
-            ))}
-          </div>
-          <span style={{ color: '#6b7280', fontSize: '0.85rem' }}>Config-Driven App Builder</span>
+
+        {/* Language Switcher */}
+        <div style={{ display: 'flex', background: '#0a0a0f', borderRadius: '8px', padding: '3px', border: '1px solid #2a2a3a' }}>
+          {(['en', 'hi', 'mr'] as const).map(l => (
+            <button key={l} onClick={() => setLang(l)}
+              style={{
+                padding: '5px 12px', borderRadius: '6px', border: 'none',
+                cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600',
+                background: lang === l ? '#6366f1' : 'transparent',
+                color: lang === l ? 'white' : '#6b7280',
+                transition: 'all 0.2s'
+              }}>
+              {l === 'en' ? 'EN' : l === 'hi' ? 'हि' : 'म'}
+            </button>
+          ))}
         </div>
       </nav>
 
       <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '2rem 1.5rem' }}>
+        {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h1 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '0.3rem', color: 'white' }}>{t.myApps}</h1>
@@ -111,6 +116,7 @@ export default function Dashboard() {
           </button>
         </div>
 
+        {/* Stats */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
           {[
             { icon: <Layers size={20} />, label: t.totalApps, value: apps.length },
@@ -127,6 +133,7 @@ export default function Dashboard() {
           ))}
         </div>
 
+        {/* Apps */}
         {apps.length === 0 ? (
           <div style={{ background: '#111118', border: '1px solid #2a2a3a', borderRadius: '20px', padding: '4rem', textAlign: 'center' }}>
             <div style={{ width: '64px', height: '64px', background: 'rgba(99,102,241,0.1)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', color: '#6366f1' }}><Layers size={28} /></div>
@@ -175,6 +182,7 @@ export default function Dashboard() {
         )}
       </div>
 
+      {/* Create Modal */}
       {showCreate && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 100, backdropFilter: 'blur(4px)' }}>
           <div style={{ background: '#111118', border: '1px solid #2a2a3a', borderRadius: '20px', padding: '2rem', width: '100%', maxWidth: '680px', maxHeight: '90vh', overflow: 'auto' }}>
