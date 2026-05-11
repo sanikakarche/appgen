@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Layers, Trash2, RefreshCw } from 'lucide-react';
-import { useLang } from '@/context/LangContext';
+
 const ComponentRegistry: Record<string, React.FC<any>> = {
   heading: ({ component }) => (
     <h2 style={{ fontSize: component.size === 'xl' ? '2rem' : '1.3rem', fontWeight: '800', marginBottom: '1rem', color: 'white' }}>
@@ -13,20 +13,17 @@ const ComponentRegistry: Record<string, React.FC<any>> = {
     </h2>
   ),
   paragraph: ({ component }) => (
-    <p style={{ color: '#6b7280', marginBottom: '1.5rem', lineHeight: '1.7' }}>{component.text}</p>
+    <p style={{ color: '#9ca3af', marginBottom: '1.5rem', lineHeight: '1.7' }}>{component.text}</p>
   ),
   divider: () => <hr style={{ border: 'none', borderTop: '1px solid #2a2a3a', margin: '1.5rem 0' }} />,
   form: ({ component, appId, onRefresh }) => <DynamicForm component={component} appId={appId} onRefresh={onRefresh} />,
   table: ({ component, appId, refreshKey }) => <DynamicTable component={component} appId={appId} refreshKey={refreshKey} />,
   unknown: ({ component }) => (
-  <div style={{ border: '1px solid #f59e0b', background: 'rgba(245,158,11,0.08)', borderRadius: '12px', padding: '1rem 1.25rem', marginBottom: '1rem', display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-    <span style={{ fontSize: '1.2rem' }}>⚠️</span>
-    <div>
-      <p style={{ color: '#fbbf24', fontWeight: '600', marginBottom: '2px' }}>Unknown component type: "{component.type}"</p>
-      <p style={{ color: '#9ca3af', fontSize: '0.8rem' }}>This component is not registered. Add it to ComponentRegistry to render it.</p>
+    <div style={{ border: '1px solid #f59e0b', background: 'rgba(245,158,11,0.08)', borderRadius: '12px', padding: '1rem 1.25rem', marginBottom: '1rem' }}>
+      <p style={{ color: '#fbbf24', fontWeight: '600' }}>⚠️ Unknown component: "{component.type}"</p>
+      <p style={{ color: '#9ca3af', fontSize: '0.8rem' }}>Add it to ComponentRegistry to render.</p>
     </div>
-  </div>
-),
+  ),
 };
 
 function DynamicForm({ component, appId, onRefresh }: any) {
@@ -40,12 +37,7 @@ function DynamicForm({ component, appId, onRefresh }: any) {
     for (const f of fields) {
       const val = values[f.name]?.trim();
       if (f.required && !val) newErrors[f.name] = `${f.label || f.name} is required`;
-      if (f.type === 'email' && val && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val))
-        newErrors[f.name] = 'Invalid email address';
-      if (f.type === 'number' && val && isNaN(Number(val)))
-        newErrors[f.name] = 'Must be a number';
-      if (f.min && Number(val) < f.min) newErrors[f.name] = `Minimum value is ${f.min}`;
-      if (f.max && Number(val) > f.max) newErrors[f.name] = `Maximum value is ${f.max}`;
+      if (f.type === 'email' && val && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) newErrors[f.name] = 'Invalid email';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -56,12 +48,8 @@ function DynamicForm({ component, appId, onRefresh }: any) {
     setLoading(true);
     try {
       await api.post(`/data/${appId}/${component.collection || 'records'}`, values);
-      // Config-driven notifications
-const successMsg = component.onSubmit?.successMessage || 'Saved successfully!';
-const redirectTo = component.onSubmit?.redirectTo;
-toast.success(successMsg);
-if (redirectTo) window.location.href = redirectTo;
-
+      const msg = component.onSubmit?.successMessage || 'Saved successfully!';
+      toast.success(msg);
       setValues({});
       setErrors({});
       onRefresh?.();
@@ -70,101 +58,56 @@ if (redirectTo) window.location.href = redirectTo;
   };
 
   const renderField = (f: any) => {
-    const commonStyle = {
-      width: '100%', background: '#0a0a0f',
-      border: `1px solid ${errors[f.name] ? '#ef4444' : '#2a2a3a'}`,
-      borderRadius: '10px', padding: '0.7rem', color: 'white',
-      outline: 'none', fontSize: '0.9rem', transition: 'border-color 0.2s'
-    };
-
-    if (f.type === 'textarea') return (
-      <textarea value={values[f.name] || ''} onChange={e => setValues(v => ({ ...v, [f.name]: e.target.value }))}
-        rows={f.rows || 3} placeholder={f.placeholder || ''}
-        style={{ ...commonStyle, resize: 'vertical' }} />
-    );
-
+    const style = { width: '100%', background: '#0a0a0f', border: `1px solid ${errors[f.name] ? '#ef4444' : '#2a2a3a'}`, borderRadius: '10px', padding: '0.7rem', color: 'white', outline: 'none', fontSize: '0.9rem' };
+    if (f.type === 'textarea') return <textarea value={values[f.name] || ''} onChange={e => setValues(v => ({ ...v, [f.name]: e.target.value }))} rows={3} style={{ ...style, resize: 'vertical' }} />;
     if (f.type === 'select') return (
-      <select value={values[f.name] || ''} onChange={e => setValues(v => ({ ...v, [f.name]: e.target.value }))}
-        style={{ ...commonStyle, cursor: 'pointer' }}>
-        <option value="">Select {f.label || f.name}</option>
-        {(f.options || []).map((opt: string) => (
-          <option key={opt} value={opt}>{opt}</option>
-        ))}
+      <select value={values[f.name] || ''} onChange={e => setValues(v => ({ ...v, [f.name]: e.target.value }))} style={{ ...style, cursor: 'pointer' }}>
+        <option value="">Select {f.label}</option>
+        {(f.options || []).map((opt: string) => <option key={opt} value={opt}>{opt}</option>)}
       </select>
     );
-
     if (f.type === 'radio') return (
       <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
         {(f.options || []).map((opt: string) => (
-          <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#d1d5db', cursor: 'pointer', fontSize: '0.9rem' }}>
-            <input type="radio" name={f.name} value={opt} checked={values[f.name] === opt}
-              onChange={e => setValues(v => ({ ...v, [f.name]: e.target.value }))} />
+          <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#d1d5db', cursor: 'pointer' }}>
+            <input type="radio" name={f.name} value={opt} checked={values[f.name] === opt} onChange={e => setValues(v => ({ ...v, [f.name]: e.target.value }))} />
             {opt}
           </label>
         ))}
       </div>
     );
-
     if (f.type === 'checkbox') return (
       <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: '#d1d5db' }}>
-        <input type="checkbox" checked={values[f.name] === 'true'}
-          onChange={e => setValues(v => ({ ...v, [f.name]: String(e.target.checked) }))} />
+        <input type="checkbox" checked={values[f.name] === 'true'} onChange={e => setValues(v => ({ ...v, [f.name]: String(e.target.checked) }))} />
         {f.checkboxLabel || f.label}
       </label>
     );
-
-    // All standard HTML input types: text, email, password, number, date, time, datetime-local, url, tel, color
-    return (
-      <input
-        type={f.type || 'text'}
-        value={values[f.name] || ''}
-        onChange={e => setValues(v => ({ ...v, [f.name]: e.target.value }))}
-        placeholder={f.placeholder || ''}
-        min={f.min} max={f.max} step={f.step}
-        style={commonStyle}
-        onFocus={e => e.target.style.borderColor = errors[f.name] ? '#ef4444' : '#6366f1'}
-        onBlur={e => e.target.style.borderColor = errors[f.name] ? '#ef4444' : '#2a2a3a'}
-      />
-    );
+    return <input type={f.type || 'text'} value={values[f.name] || ''} onChange={e => setValues(v => ({ ...v, [f.name]: e.target.value }))} placeholder={f.placeholder || ''} min={f.min} max={f.max} style={style} />;
   };
 
-  if (fields.length === 0) return (
-    <div style={{ background: '#111118', border: '1px solid #2a2a3a', borderRadius: '14px', padding: '1.5rem', marginBottom: '1.5rem' }}>
-      <p style={{ color: '#f59e0b' }}>⚠️ Form has no fields defined in config</p>
-    </div>
-  );
-
-  // Smart grid: use columns from config or auto
-  const gridCols = component.columns || 'repeat(auto-fit, minmax(220px, 1fr))';
+  if (fields.length === 0) return <div style={{ background: '#111118', border: '1px solid #2a2a3a', borderRadius: '14px', padding: '1.5rem', marginBottom: '1.5rem', color: '#f59e0b' }}>⚠️ Form has no fields defined</div>;
 
   return (
     <div style={{ background: '#111118', border: '1px solid #2a2a3a', borderRadius: '16px', padding: '1.5rem', marginBottom: '1.5rem' }}>
-      {component.title && <h3 style={{ fontWeight: '700', marginBottom: '1.2rem', color: 'white', fontSize: '1.1rem' }}>{component.title}</h3>}
-      <div style={{ display: 'grid', gridTemplateColumns: gridCols, gap: '1rem' }}>
+      {component.title && <h3 style={{ fontWeight: '700', marginBottom: '1.2rem', color: 'white' }}>{component.title}</h3>}
+      <div style={{ display: 'grid', gridTemplateColumns: component.columns || 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
         {fields.map((f: any) => (
           <div key={f.name} style={{ gridColumn: f.fullWidth ? '1 / -1' : undefined }}>
-            <label style={{ color: errors[f.name] ? '#ef4444' : '#9ca3af', fontSize: '0.8rem', fontWeight: '600', display: 'block', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              {f.label || f.name}
-              {f.required && <span style={{ color: '#ef4444', marginLeft: '4px' }}>*</span>}
+            <label style={{ color: errors[f.name] ? '#ef4444' : '#9ca3af', fontSize: '0.8rem', fontWeight: '600', display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>
+              {f.label || f.name}{f.required && <span style={{ color: '#ef4444', marginLeft: '4px' }}>*</span>}
             </label>
             {renderField(f)}
-            {errors[f.name] && (
-              <p style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '4px' }}>⚠ {errors[f.name]}</p>
-            )}
-            {f.hint && !errors[f.name] && (
-              <p style={{ color: '#6b7280', fontSize: '0.75rem', marginTop: '4px' }}>{f.hint}</p>
-            )}
+            {errors[f.name] && <p style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '4px' }}>⚠ {errors[f.name]}</p>}
+            {f.hint && !errors[f.name] && <p style={{ color: '#6b7280', fontSize: '0.75rem', marginTop: '4px' }}>{f.hint}</p>}
           </div>
         ))}
       </div>
       <div style={{ marginTop: '1.2rem', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
         <button onClick={handleSubmit} disabled={loading}
-          style={{ background: loading ? '#1a1a24' : 'linear-gradient(135deg, #6366f1, #8b5cf6)', border: 'none', borderRadius: '10px', padding: '0.75rem 1.75rem', color: 'white', fontWeight: '700', cursor: loading ? 'not-allowed' : 'pointer', fontSize: '0.9rem' }}>
+          style={{ background: loading ? '#1a1a24' : 'linear-gradient(135deg, #6366f1, #8b5cf6)', border: 'none', borderRadius: '10px', padding: '0.75rem 1.75rem', color: 'white', fontWeight: '700', cursor: loading ? 'not-allowed' : 'pointer' }}>
           {loading ? 'Saving...' : component.submitLabel || 'Submit'}
         </button>
-        {Object.keys(errors).length > 0 && (
-          <span style={{ color: '#ef4444', fontSize: '0.8rem' }}>Please fix {Object.keys(errors).length} error(s)</span>
-        )}
+        {Object.keys(errors).length > 0 && <span style={{ color: '#ef4444', fontSize: '0.8rem' }}>Fix {Object.keys(errors).length} error(s)</span>}
       </div>
     </div>
   );
@@ -180,10 +123,8 @@ function DynamicTable({ component, appId, refreshKey }: any) {
 
   const fetchData = async () => {
     setLoading(true);
-    try {
-      const { data } = await api.get(`/data/${appId}/${component.collection || 'records'}`);
-      setRows(data);
-    } catch { setRows([]); }
+    try { const { data } = await api.get(`/data/${appId}/${component.collection || 'records'}`); setRows(data); }
+    catch { setRows([]); }
     finally { setLoading(false); }
   };
 
@@ -200,11 +141,7 @@ function DynamicTable({ component, appId, refreshKey }: any) {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const { data } = await api.post(
-        `/data/${appId}/${component.collection}/import-csv`,
-        formData,
-        { headers: { 'Content-Type': 'multipart/form-data' } }
-      );
+      const { data } = await api.post(`/data/${appId}/${component.collection}/import-csv`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       toast.success(`Imported ${data.imported} records!`);
       fetchData();
     } catch { toast.error('CSV import failed'); }
@@ -219,9 +156,7 @@ function DynamicTable({ component, appId, refreshKey }: any) {
         {component.title && <h3 style={{ fontWeight: '700', color: 'white' }}>{component.title}</h3>}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>{rows.length} records</span>
-          <button onClick={fetchData} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer' }}>
-            <RefreshCw size={14} />
-          </button>
+          <button onClick={fetchData} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer' }}><RefreshCw size={14} /></button>
           <label style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(99,102,241,0.15)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600' }}>
             {importing ? 'Importing...' : '📥 Import CSV'}
             <input type="file" accept=".csv" onChange={handleCSV} style={{ display: 'none' }} disabled={importing} />
@@ -233,15 +168,13 @@ function DynamicTable({ component, appId, refreshKey }: any) {
       ) : rows.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
           No records yet in <strong>{component.collection}</strong>
-          <p style={{ fontSize: '0.8rem', marginTop: '0.5rem' }}>Use the form above or import a CSV file</p>
+          <p style={{ fontSize: '0.8rem', marginTop: '0.5rem' }}>Use the form above or import a CSV</p>
         </div>
       ) : (
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid #2a2a3a' }}>
-              {cols.map((c: string) => (
-                <th key={c} style={{ textAlign: 'left', padding: '0.6rem 1rem', color: '#6b7280', fontWeight: '600', fontSize: '0.8rem', textTransform: 'uppercase' }}>{c}</th>
-              ))}
+              {cols.map((c: string) => <th key={c} style={{ textAlign: 'left', padding: '0.6rem 1rem', color: '#6b7280', fontWeight: '600', fontSize: '0.8rem', textTransform: 'uppercase' }}>{c}</th>)}
               <th style={{ textAlign: 'left', padding: '0.6rem 1rem', color: '#6b7280', fontWeight: '600', fontSize: '0.8rem' }}>Actions</th>
             </tr>
           </thead>
@@ -250,9 +183,7 @@ function DynamicTable({ component, appId, refreshKey }: any) {
               <tr key={row.id} style={{ borderBottom: '1px solid rgba(42,42,58,0.5)' }}
                 onMouseEnter={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.05)')}
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                {cols.map((c: string) => (
-                  <td key={c} style={{ padding: '0.8rem 1rem', color: 'white' }}>{row.data?.[c] ?? '—'}</td>
-                ))}
+                {cols.map((c: string) => <td key={c} style={{ padding: '0.8rem 1rem', color: 'white' }}>{row.data?.[c] ?? '—'}</td>)}
                 <td style={{ padding: '0.8rem 1rem' }}>
                   <button onClick={() => deleteRow(row.id)} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer' }}
                     onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
@@ -270,8 +201,7 @@ function DynamicTable({ component, appId, refreshKey }: any) {
 }
 
 export default function AppPage() {
-  const { user } = useAuth();
-  const { lang, setLang } = useLang();
+  const { loading } = useAuth();
   const router = useRouter();
   const params = useParams();
   const appId = params.id as string;
@@ -279,7 +209,7 @@ export default function AppPage() {
   const [activePage, setActivePage] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  useEffect(() => { if (!user) router.push('/login'); else fetchApp(); }, [user]);
+  useEffect(() => { if (!loading) fetchApp(); }, [loading]);
 
   const fetchApp = async () => {
     try { const { data } = await api.get(`/apps/${appId}`); setApp(data); }
@@ -288,7 +218,10 @@ export default function AppPage() {
 
   if (!app) return (
     <div style={{ minHeight: '100vh', background: '#0a0a0f', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: '#6b7280' }}>Loading app...</p>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ width: '36px', height: '36px', border: '3px solid #2a2a3a', borderTop: '3px solid #6366f1', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 1rem' }} />
+        <p style={{ color: '#6b7280' }}>Loading...</p>
+      </div>
     </div>
   );
 
@@ -299,10 +232,8 @@ export default function AppPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#0a0a0f' }}>
       <nav style={{ background: '#111118', borderBottom: '1px solid #2a2a3a', padding: '0 1.5rem', height: '60px', display: 'flex', alignItems: 'center', gap: '1rem', position: 'sticky', top: 0, zIndex: 50 }}>
-        <button onClick={() => router.push('/dashboard')}
-          style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.85rem' }}
-          onMouseEnter={e => (e.currentTarget.style.color = 'white')}
-          onMouseLeave={e => (e.currentTarget.style.color = '#6b7280')}>
+        <button onClick={() => router.push('/dashboard')} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.85rem' }}
+          onMouseEnter={e => (e.currentTarget.style.color = 'white')} onMouseLeave={e => (e.currentTarget.style.color = '#6b7280')}>
           <ArrowLeft size={16} /> Back
         </button>
         <div style={{ width: '1px', height: '20px', background: '#2a2a3a' }} />
@@ -311,18 +242,6 @@ export default function AppPage() {
             <Layers size={14} color="white" />
           </div>
           <span style={{ fontWeight: '700', color: 'white' }}>{app.name}</span>
-        </div>
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ display: 'flex', background: '#0a0a0f', borderRadius: '8px', padding: '3px', border: '1px solid #2a2a3a' }}>
-            {(['en', 'hi', 'mr'] as const).map(l => (
-              <button key={l} onClick={() => setLang(l)}
-                style={{ padding: '4px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '600',
-                  background: lang === l ? '#6366f1' : 'transparent',
-                  color: lang === l ? 'white' : '#6b7280' }}>
-                {l === 'en' ? 'EN' : l === 'hi' ? 'हि' : 'म'}
-              </button>
-            ))}
-          </div>
         </div>
       </nav>
 
@@ -344,8 +263,8 @@ export default function AppPage() {
           </div>
         ) : (
           components.map((comp: any, i: number) => {
-            const Comp = ComponentRegistry[comp.type] || ComponentRegistry.unknown;
-            return <Comp key={i} component={comp} appId={appId} onRefresh={() => setRefreshKey(k => k + 1)} refreshKey={refreshKey} />;
+            const Comp = ComponentRegistry[comp?.type] || ComponentRegistry.unknown;
+            return <Comp key={i} component={comp || {}} appId={appId} onRefresh={() => setRefreshKey(k => k + 1)} refreshKey={refreshKey} />;
           })
         )}
       </div>

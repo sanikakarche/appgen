@@ -1,46 +1,28 @@
-import { Pool } from 'pg';
+import express from 'express';
+import cors from 'cors';
 import dotenv from 'dotenv';
+import { initDB } from './db/index.js'; // Import your new function
+import authRoutes from './routes/auth.js';
+import appRoutes from './routes/apps.js';
+import dataRoutes from './routes/data.js';
+
 dotenv.config();
 
-export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  // Add this for production stability
-  ssl: {
-    rejectUnauthorized: false 
-  },
-  connectionTimeoutMillis: 5000, // Helps catch errors faster
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+app.use(cors());
+app.use(express.json());
+
+// Initialize Database before starting the server
+initDB().then(() => {
+  app.use('/api/auth', authRoutes);
+  app.use('/api/apps', appRoutes);
+  app.use('/api/data', dataRoutes);
+
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+  });
+}).catch(err => {
+  console.error('Failed to start server due to DB error', err);
 });
-
-export async function initDB() {
-  try {
-    const client = await pool.connect(); // Test connection first
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        email VARCHAR(255) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL,
-        created_at TIMESTAMP DEFAULT NOW()
-      );
-
-      CREATE TABLE IF NOT EXISTS apps (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER REFERENCES users(id),
-        name VARCHAR(255) NOT NULL,
-        config JSONB NOT NULL,
-        created_at TIMESTAMP DEFAULT NOW()
-      );
-
-      CREATE TABLE IF NOT EXISTS app_data (
-        id SERIAL PRIMARY KEY,
-        app_id INTEGER REFERENCES apps(id),
-        collection VARCHAR(255) NOT NULL,
-        data JSONB NOT NULL,
-        created_at TIMESTAMP DEFAULT NOW()
-      );
-    `);
-    client.release(); // Important to release the client back to the pool
-    console.log('✅ Database initialized');
-  } catch (error) {
-    console.error('❌ Database initialization failed:', error);
-  }
-}

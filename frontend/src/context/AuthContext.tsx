@@ -6,54 +6,62 @@ interface User { id: number; email: string; }
 interface AuthCtx {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
-const AuthContext = createContext<AuthCtx>({
-  user: null,
-  loading: false,
-  login: async () => {},
-  register: async () => {},
-  logout: () => {},
-});
+const AuthContext = createContext<AuthCtx | null>(null);
+
+const DEMO_EMAIL = 'demo@appgen.com';
+const DEMO_PASSWORD = 'demo123456';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const u = localStorage.getItem('user');
-      if (u) setUser(JSON.parse(u));
-    } catch {}
+    autoLogin();
   }, []);
 
-  const login = async (email: string, password: string) => {
-    const { data } = await api.post('/auth/login', { email, password });
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
-    setUser(data.user);
-  };
-
-  const register = async (email: string, password: string) => {
-    const { data } = await api.post('/auth/register', { email, password });
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
-    setUser(data.user);
+  const autoLogin = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
+      if (token && storedUser) {
+        setUser(JSON.parse(storedUser));
+        setLoading(false);
+        return;
+      }
+      // Try login first
+      try {
+        const { data } = await api.post('/auth/login', { email: DEMO_EMAIL, password: DEMO_PASSWORD });
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        setUser(data.user);
+      } catch {
+        // If login fails, register
+        const { data } = await api.post('/auth/register', { email: DEMO_EMAIL, password: DEMO_PASSWORD });
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        setUser(data.user);
+      }
+    } catch (e) {
+      console.error('Auto login failed', e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const logout = () => {
     localStorage.clear();
     setUser(null);
+    autoLogin();
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, logout }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => useContext(AuthContext)!;

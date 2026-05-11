@@ -16,9 +16,7 @@ router.get('/:appId/:collection', async (req: AuthRequest, res) => {
       [req.params.appId, req.params.collection]
     );
     res.json(result.rows);
-  } catch {
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch { res.status(500).json({ error: 'Server error' }); }
 });
 
 router.post('/:appId/:collection', async (req: AuthRequest, res) => {
@@ -30,9 +28,7 @@ router.post('/:appId/:collection', async (req: AuthRequest, res) => {
       [req.params.appId, req.params.collection, JSON.stringify(req.body)]
     );
     res.json(result.rows[0]);
-  } catch {
-    res.status(500).json({ error: 'Server error' });
-  }
+  } catch { res.status(500).json({ error: 'Server error' }); }
 });
 
 router.put('/:appId/:collection/:recordId', async (req: AuthRequest, res) => {
@@ -48,18 +44,15 @@ router.delete('/:appId/:collection/:recordId', async (req: AuthRequest, res) => 
   res.json({ success: true });
 });
 
-// CSV Import
 router.post('/:appId/:collection/import-csv', upload.single('file'), async (req: AuthRequest, res) => {
   try {
     const app = await pool.query('SELECT * FROM apps WHERE id = $1 AND user_id = $2', [req.params.appId, req.userId]);
     if (!app.rows[0]) return res.status(404).json({ error: 'App not found' });
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-
     const csv = req.file.buffer.toString('utf-8');
     const lines = csv.split('\n').filter(l => l.trim());
     const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
     const inserted = [];
-
     for (let i = 1; i < lines.length; i++) {
       const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
       if (values.length !== headers.length) continue;
@@ -72,9 +65,7 @@ router.post('/:appId/:collection/import-csv', upload.single('file'), async (req:
       inserted.push(result.rows[0]);
     }
     res.json({ success: true, imported: inserted.length });
-  } catch (err) {
-    res.status(500).json({ error: 'CSV import failed' });
-  }
+  } catch { res.status(500).json({ error: 'CSV import failed' }); }
 });
 
 export default router;
