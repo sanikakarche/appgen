@@ -1,0 +1,10 @@
+[33m43dc78a[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m change env
+[33m47084bf[m Add responsive navigation menu
+[33ma7894e4[m Add responsive navigation menu
+[33maf5315d[m Fix db exports and auto login
+[33m54137bb[m Fix - auto login no password needed
+[33m7e5566e[m fix: no redirect on 401, stop flickering
+[33m8afc5c8[m fix: restore AuthContext types, remove redirect
+[33m5fe5a0f[m fix: remove auth completely, go straight to dashboard
+[33ma452959[m fix: add language switcher back to dashboard
+[33m622f31d[m fix: remove auth guard from dashboard
